@@ -1,8 +1,9 @@
 import hmac
 import jwt
+from datetime import datetime, timezone
 from flask import Blueprint, request, jsonify, current_app
 from app.extensions import db, limiter
-from app.models import Product, Order, Category, Collection
+from app.models import Product, Order, Category, Collection, Subscriber, Review
 from app.utils.security import generate_admin_token, require_admin
 
 admin_auth_bp = Blueprint("admin_auth", __name__)
@@ -14,7 +15,7 @@ def admin_login():
     """
     POST /api/admin/login
     Body: { "email": "...", "password": "..." }
-    Returns: { "token": "jwt..." }
+    Returns: { "token": "jwt...", "expires_in": 86400 }
     """
     data = request.get_json(silent=True) or {}
     email = (data.get("email") or "").strip().lower()
@@ -37,7 +38,7 @@ def admin_login():
         return jsonify({"error": "Invalid email or password"}), 401
 
     token = generate_admin_token(email)
-    return jsonify({"token": token})
+    return jsonify({"token": token, "expires_in": 86400})
 
 
 @admin_auth_bp.get("/dashboard")
@@ -45,60 +46,34 @@ def admin_login():
 def admin_dashboard():
     """
     GET /api/admin/dashboard
-    Returns admin profile + store stats.
+    Returns flat stats object matching CMS DashboardStats interface.
     """
-    # Extract admin email from token
-    auth = request.headers.get("Authorization", "")
-    token = auth.split(" ", 1)[1] if auth.startswith("Bearer ") else ""
-    try:
-        payload = jwt.decode(
-            token,
-            current_app.config["ADMIN_JWT_SECRET"],
-            algorithms=["HS256"],
-        )
-        admin_email = payload.get("sub", "")
-    except jwt.InvalidTokenError:
-        admin_email = ""
-
-    # Gather store stats
-    total_products = Product.query.count()
     live_products = Product.query.filter_by(status="live").count()
     draft_products = Product.query.filter_by(status="draft").count()
     sold_products = Product.query.filter_by(status="sold").count()
 
-    total_orders = Order.query.count()
+    # Orders created this month
+    now = datetime.now(timezone.utc)
+    first_of_month = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+    orders_this_month = Order.query.filter(Order.created_at >= first_of_month).count()
     pending_orders = Order.query.filter_by(status="pending").count()
-    confirmed_orders = Order.query.filter_by(status="confirmed").count()
-    paid_orders = Order.query.filter_by(status="paid").count()
 
-    total_categories = Category.query.count()
-    total_collections = Collection.query.count()
+    total_subscribers = Subscriber.query.filter_by(is_active=True).count()
+    pending_reviews = Review.query.filter_by(is_approved=False).count()
 
-    # Revenue from paid/shipped/delivered orders
-    revenue_statuses = {"paid", "shipped", "collected", "delivered"}
-    revenue_orders = Order.query.filter(Order.status.in_(revenue_statuses)).all()
-    total_revenue = sum(float(o.total_amount) for o in revenue_orders)
+    # Drafts created from Instagram
+    drafts_from_instagram = Product.query.filter(
+        Product.status == "draft",
+        Product.instagram_post_id.isnot(None),
+    ).count()
 
     return jsonify({
-        "admin": {
-            "email": admin_email,
-            "role": "admin",
-        },
-        "stats": {
-            "products": {
-                "total": total_products,
-                "live": live_products,
-                "draft": draft_products,
-                "sold": sold_products,
-            },
-            "orders": {
-                "total": total_orders,
-                "pending": pending_orders,
-                "confirmed": confirmed_orders,
-                "paid": paid_orders,
-            },
-            "categories": total_categories,
-            "collections": total_collections,
-            "revenue": total_revenue,
-        },
+        "live_products": live_products,
+        "draft_products": draft_products,
+        "sold_products": sold_products,
+        "orders_this_month": orders_this_month,
+        "pending_orders": pending_orders,
+        "total_subscribers": total_subscribers,
+        "pending_reviews": pending_reviews,
+        "drafts_from_instagram": drafts_from_instagram,
     })

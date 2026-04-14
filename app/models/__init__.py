@@ -415,20 +415,26 @@ class Review(db.Model):
     id = uuid_pk()
     product_id = db.Column(UUID(as_uuid=True), db.ForeignKey("products.id"), nullable=False)
     reviewer_name = db.Column(db.String(100), nullable=False)
+    email = db.Column(db.String(255), nullable=True)
     rating = db.Column(db.Integer, nullable=False)  # 1-5
     comment = db.Column(db.Text, nullable=True)
     is_approved = db.Column(db.Boolean, default=False)
     created_at = db.Column(db.DateTime(timezone=True), default=now_utc)
+    updated_at = db.Column(db.DateTime(timezone=True), default=now_utc, onupdate=now_utc)
 
     product = db.relationship("Product", back_populates="reviews")
 
     def to_dict(self):
         return {
             "id": str(self.id),
+            "product_id": str(self.product_id) if self.product_id else None,
             "reviewer_name": self.reviewer_name,
+            "email": self.email,
             "rating": self.rating,
             "comment": self.comment,
+            "is_approved": self.is_approved,
             "created_at": self.created_at.isoformat(),
+            "updated_at": self.updated_at.isoformat() if self.updated_at else None,
         }
 
 
@@ -446,6 +452,8 @@ class Subscriber(db.Model):
     source = db.Column(db.String(50), default="footer")  # footer|popup|checkout
     is_active = db.Column(db.Boolean, default=True)
     subscribed_at = db.Column(db.DateTime(timezone=True), default=now_utc)
+    created_at = db.Column(db.DateTime(timezone=True), default=now_utc)
+    updated_at = db.Column(db.DateTime(timezone=True), default=now_utc, onupdate=now_utc)
 
     def to_dict(self):
         return {
@@ -475,6 +483,7 @@ class UpcomingItem(db.Model):
     notify_count = db.Column(db.Integer, default=0)
     sort_order = db.Column(db.Integer, default=0)
     created_at = db.Column(db.DateTime(timezone=True), default=now_utc)
+    updated_at = db.Column(db.DateTime(timezone=True), default=now_utc, onupdate=now_utc)
 
     def to_dict(self):
         return {
@@ -486,4 +495,31 @@ class UpcomingItem(db.Model):
             "notify_count": self.notify_count,
             "sort_order": self.sort_order,
             "created_at": self.created_at.isoformat(),
+        }
+
+
+# ─── enquiry ─────────────────────────────────────────────────────────────────
+
+class Enquiry(db.Model):
+    __tablename__ = "enquiries"
+
+    id = uuid_pk()
+    name = db.Column(db.String(255), nullable=False)
+    email = db.Column(db.String(255), nullable=False)
+    phone = db.Column(db.String(20), nullable=True)
+    message = db.Column(db.Text, nullable=False)
+    status = db.Column(db.String(50), default="unread")  # unread | read | replied
+    created_at = db.Column(db.DateTime(timezone=True), default=now_utc)
+    updated_at = db.Column(db.DateTime(timezone=True), default=now_utc, onupdate=now_utc)
+
+    def to_dict(self):
+        return {
+            "id": str(self.id),
+            "name": self.name,
+            "email": self.email,
+            "phone": self.phone,
+            "message": self.message,
+            "status": self.status,
+            "created_at": self.created_at.isoformat(),
+            "updated_at": self.updated_at.isoformat() if self.updated_at else None,
         }

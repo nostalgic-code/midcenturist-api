@@ -70,6 +70,16 @@ def admin_list_products():
     })
 
 
+@admin_products_bp.get("/products/<string:product_id>")
+@require_admin
+def admin_get_product(product_id: str):
+    """GET /api/admin/products/:id — single product by UUID."""
+    product = Product.query.filter_by(id=product_id).first()
+    if not product:
+        return jsonify({"error": "Product not found"}), 404
+    return jsonify(product.to_dict(include_reviews=True))
+
+
 @admin_products_bp.post("/products")
 @require_admin
 def admin_create_product():

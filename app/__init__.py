@@ -46,6 +46,9 @@ def create_app(config_name: str = None) -> Flask:
     from app.routes.admin.products import admin_products_bp
     from app.routes.admin.orders import admin_orders_bp, admin_categories_bp, admin_instagram_bp, admin_reviews_bp
     from app.routes.admin.auth import admin_auth_bp
+    from app.routes.admin.subscribers import admin_subscribers_bp
+    from app.routes.admin.upcoming import admin_upcoming_bp
+    from app.routes.admin.enquiries import admin_enquiries_bp
 
     app.register_blueprint(products_bp, url_prefix="/api")
     app.register_blueprint(categories_bp, url_prefix="/api")
@@ -59,6 +62,9 @@ def create_app(config_name: str = None) -> Flask:
     app.register_blueprint(admin_categories_bp, url_prefix="/api/admin")
     app.register_blueprint(admin_instagram_bp, url_prefix="/api/admin")
     app.register_blueprint(admin_reviews_bp, url_prefix="/api/admin")
+    app.register_blueprint(admin_subscribers_bp, url_prefix="/api/admin")
+    app.register_blueprint(admin_upcoming_bp, url_prefix="/api/admin")
+    app.register_blueprint(admin_enquiries_bp, url_prefix="/api/admin")
 
     # Health check
     @app.get("/api/health")
