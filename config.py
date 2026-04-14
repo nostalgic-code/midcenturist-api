@@ -9,6 +9,8 @@ class Config:
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     WTF_CSRF_ENABLED = True
     ADMIN_JWT_SECRET = os.environ.get("ADMIN_JWT_SECRET", "admin-secret-change-in-production")
+    ADMIN_EMAIL = os.environ.get("ADMIN_EMAIL", "")
+    ADMIN_PASSWORD = os.environ.get("ADMIN_PASSWORD", "")
 
     # Payment gateways
     PAYFAST_MERCHANT_ID = os.environ.get("PAYFAST_MERCHANT_ID", "")

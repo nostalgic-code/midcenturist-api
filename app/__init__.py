@@ -45,6 +45,7 @@ def create_app(config_name: str = None) -> Flask:
     from app.routes.newsletter import newsletter_bp
     from app.routes.admin.products import admin_products_bp
     from app.routes.admin.orders import admin_orders_bp, admin_categories_bp, admin_instagram_bp, admin_reviews_bp
+    from app.routes.admin.auth import admin_auth_bp
 
     app.register_blueprint(products_bp, url_prefix="/api")
     app.register_blueprint(categories_bp, url_prefix="/api")
@@ -52,6 +53,7 @@ def create_app(config_name: str = None) -> Flask:
     app.register_blueprint(orders_bp, url_prefix="/api")
     # app.register_blueprint(payments_bp, url_prefix="/api/payments")  # TODO: Enable after payment gateway is decided
     app.register_blueprint(newsletter_bp, url_prefix="/api")
+    app.register_blueprint(admin_auth_bp, url_prefix="/api/admin")
     app.register_blueprint(admin_products_bp, url_prefix="/api/admin")
     app.register_blueprint(admin_orders_bp, url_prefix="/api/admin")
     app.register_blueprint(admin_categories_bp, url_prefix="/api/admin")
