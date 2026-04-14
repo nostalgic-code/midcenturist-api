@@ -139,7 +139,7 @@ List all products (all statuses).
           "id": "uuid",
           "product_id": "uuid",
           "variant_id": null,
-          "url": "https://res.cloudinary.com/.../image.jpg",
+          "url": "/api/images/uuid",
           "alt_text": "Teak sideboard front view",
           "sort_order": 0,
           "is_primary": true
@@ -228,17 +228,21 @@ Soft-delete (archives) by default. Add `?permanent=true` for hard delete.
 
 ### POST `/api/admin/products/:productId/images`
 
-Upload an image to Cloudinary.
+Upload an image (stored in PostgreSQL). Accepts JPEG, PNG, WebP, GIF up to 10 MB.
 
 **Request:** `multipart/form-data`
 - `file` — Image file (required)
 - `alt_text` — Alt text string (optional)
 
-**Response (201):** Image object.
+**Response (201):** Image object. The `url` field returns `/api/images/:imageId`.
+
+### GET `/api/images/:imageId`
+
+Public endpoint — serves the image binary with proper `Content-Type` and cache headers.
 
 ### DELETE `/api/admin/products/:productId/images/:imageId`
 
-Delete a product image (also removes from Cloudinary).
+Delete a product image from the database.
 
 **Response (200):**
 ```json

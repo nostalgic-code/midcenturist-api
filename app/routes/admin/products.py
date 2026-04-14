@@ -1,6 +1,6 @@
 import re
 from datetime import datetime, timezone, timedelta
-from flask import Blueprint, request, jsonify, current_app
+from flask import Blueprint, request, jsonify
 from app.extensions import db, limiter
 from app.models import Product, ProductVariant, ProductImage, Category
 from app.utils.security import require_admin
@@ -209,10 +209,14 @@ def admin_delete_product(product_id: str):
     return jsonify({"message": "Product deleted" if permanent else "Product archived"})
 
 
+ALLOWED_IMAGE_TYPES = {"image/jpeg", "image/png", "image/webp", "image/gif"}
+MAX_IMAGE_SIZE = 10 * 1024 * 1024  # 10 MB
+
+
 @admin_products_bp.post("/products/<string:product_id>/images")
 @require_admin
 def admin_upload_image(product_id: str):
-    """POST /api/admin/products/:id/images — upload to Cloudinary, save URL."""
+    """POST /api/admin/products/:id/images — store image in PostgreSQL."""
     product = Product.query.filter_by(id=product_id).first()
     if not product:
         return jsonify({"error": "Product not found"}), 404
@@ -221,18 +225,16 @@ def admin_upload_image(product_id: str):
         return jsonify({"error": "No file provided"}), 400
 
     file = request.files["file"]
+    if not file.filename:
+        return jsonify({"error": "No file selected"}), 400
 
-    try:
-        import cloudinary.uploader
-        result = cloudinary.uploader.upload(
-            file,
-            folder=f"midcenturist/products/{product_id}",
-            transformation=[{"quality": "auto", "fetch_format": "auto"}],
-        )
-        url = result["secure_url"]
-    except Exception as e:
-        current_app.logger.error(f"Cloudinary upload failed: {e}")
-        return jsonify({"error": "Image upload failed"}), 500
+    content_type = file.content_type or "application/octet-stream"
+    if content_type not in ALLOWED_IMAGE_TYPES:
+        return jsonify({"error": f"File type not allowed. Accepted: JPEG, PNG, WebP, GIF"}), 400
+
+    file_data = file.read()
+    if len(file_data) > MAX_IMAGE_SIZE:
+        return jsonify({"error": "File too large. Maximum size is 10 MB"}), 400
 
     # First image is primary by default
     is_primary = len(product.images) == 0
@@ -240,7 +242,9 @@ def admin_upload_image(product_id: str):
 
     image = ProductImage(
         product_id=product.id,
-        url=url,
+        data=file_data,
+        content_type=content_type,
+        filename=file.filename,
         alt_text=sanitise_string(request.form.get("alt_text"), 255),
         sort_order=sort_order,
         is_primary=is_primary,
@@ -258,15 +262,6 @@ def admin_delete_image(product_id: str, image_id: str):
     image = ProductImage.query.filter_by(id=image_id, product_id=product_id).first()
     if not image:
         return jsonify({"error": "Image not found"}), 404
-
-    # Delete from Cloudinary if URL is a Cloudinary URL
-    try:
-        if "cloudinary.com" in image.url:
-            import cloudinary.uploader
-            public_id = image.url.split("/upload/")[1].rsplit(".", 1)[0]
-            cloudinary.uploader.destroy(public_id)
-    except Exception as e:
-        current_app.logger.warning(f"Cloudinary delete failed: {e}")
 
     db.session.delete(image)
     db.session.commit()

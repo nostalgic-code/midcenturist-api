@@ -30,9 +30,6 @@ class Config:
     CLIENT_EMAIL = os.environ.get("CLIENT_EMAIL", "")
     FROM_EMAIL = os.environ.get("FROM_EMAIL", "noreply@midcenturist.co.za")
 
-    # Image storage (Cloudinary)
-    CLOUDINARY_URL = os.environ.get("CLOUDINARY_URL", "")
-
     # CORS
     ALLOWED_ORIGINS = os.environ.get(
         "ALLOWED_ORIGINS",

@@ -44,8 +44,6 @@ services:
         sync: false
       - key: FROM_EMAIL
         value: noreply@midcenturist.co.za
-      - key: CLOUDINARY_URL
-        sync: false
       - key: ALLOWED_ORIGINS
         value: https://midcenturist.co.za,https://www.midcenturist.co.za,http://localhost:3000,http://localhost:3001
       - key: REDIS_URL

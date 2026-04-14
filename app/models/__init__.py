@@ -221,7 +221,10 @@ class ProductImage(db.Model):
     id = uuid_pk()
     product_id = db.Column(UUID(as_uuid=True), db.ForeignKey("products.id"), nullable=False)
     variant_id = db.Column(UUID(as_uuid=True), db.ForeignKey("product_variants.id"), nullable=True)
-    url = db.Column(db.String(500), nullable=False)
+    url = db.Column(db.String(500), nullable=True)  # legacy / fallback
+    data = db.Column(db.LargeBinary, nullable=True)  # image bytes stored in PostgreSQL
+    content_type = db.Column(db.String(100), nullable=True)  # e.g. image/jpeg
+    filename = db.Column(db.String(255), nullable=True)
     alt_text = db.Column(db.String(255), nullable=True)
     sort_order = db.Column(db.Integer, default=0)
     is_primary = db.Column(db.Boolean, default=False)
@@ -229,12 +232,19 @@ class ProductImage(db.Model):
     product = db.relationship("Product", back_populates="images")
     variant = db.relationship("ProductVariant", back_populates="images")
 
+    @property
+    def image_url(self):
+        """Return the serving URL for this image."""
+        if self.data is not None:
+            return f"/api/images/{self.id}"
+        return self.url
+
     def to_dict(self):
         return {
             "id": str(self.id),
             "product_id": str(self.product_id),
             "variant_id": str(self.variant_id) if self.variant_id else None,
-            "url": self.url,
+            "url": self.image_url,
             "alt_text": self.alt_text,
             "sort_order": self.sort_order,
             "is_primary": self.is_primary,
