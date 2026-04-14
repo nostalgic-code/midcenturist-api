@@ -64,7 +64,3 @@ def create_app(config_name: str = None) -> Flask:
         return {"status": "ok", "env": config_name}
 
     return app
-
-
-# Create default app instance for gunicorn
-app = create_app()
