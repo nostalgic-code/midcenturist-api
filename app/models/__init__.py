@@ -234,9 +234,14 @@ class ProductImage(db.Model):
 
     @property
     def image_url(self):
-        """Return the serving URL for this image."""
+        """Return the full serving URL for this image."""
         if self.data is not None:
-            return f"/api/images/{self.id}"
+            from flask import request as _req
+            try:
+                base = _req.host_url.rstrip("/")
+            except RuntimeError:
+                base = ""
+            return f"{base}/api/images/{self.id}"
         return self.url
 
     def to_dict(self):
