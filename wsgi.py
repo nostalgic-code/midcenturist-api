@@ -13,6 +13,8 @@ with app.app_context():
         "ALTER TABLE product_images ADD COLUMN IF NOT EXISTS content_type VARCHAR(100)",
         "ALTER TABLE product_images ADD COLUMN IF NOT EXISTS filename VARCHAR(255)",
         "ALTER TABLE product_images ALTER COLUMN url DROP NOT NULL",
+        "ALTER TABLE subscribers ADD COLUMN IF NOT EXISTS phone VARCHAR(30)",
+        "ALTER TABLE subscribers ADD COLUMN IF NOT EXISTS area VARCHAR(100)",
     ]
     for sql in migrations:
         try:
